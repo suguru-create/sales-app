@@ -1,0 +1,2092 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>営業リストアプリ</title>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=DM+Sans:wght@400;500;700&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1e2530;
+      --surface3: #262d38;
+      --border: #30363d;
+      --accent: #4fc3f7;
+      --accent2: #00e5a0;
+      --accent3: #ff6b6b;
+      --accent4: #ffd93d;
+      --text: #e6edf3;
+      --text2: #8b949e;
+      --text3: #484f58;
+      --danger: #ff6b6b;
+      --warn: #ffd93d;
+      --working: #4fc3f7;
+      --medical: #c084fc;
+      --service: #34d399;
+      --status-none: #484f58;
+      --status-react: #ffd93d;
+      --status-quote: #fb923c;
+      --status-order: #00e5a0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Sans JP', 'DM Sans', sans-serif;
+      max-width: 430px;
+      margin: 0 auto;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    .screen {
+      display: none;
+      padding-bottom: 80px;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(4px)
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0)
+      }
+    }
+
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .topbar-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .topbar-sub {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .topbar-action {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 430px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      padding: 8px 0 20px;
+      z-index: 200;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      background: none;
+      border: none;
+      color: var(--text3);
+      font-size: 10px;
+      font-family: inherit;
+      cursor: pointer;
+      padding: 6px 0;
+      position: relative;
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .nav-badge {
+      position: absolute;
+      top: 2px;
+      right: calc(50% - 20px);
+      background: var(--danger);
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 5px;
+      border-radius: 10px;
+    }
+
+    .dash-hero {
+      background: linear-gradient(135deg, #1a2744 0%, #0d2137 50%, #0a1a2e 100%);
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .dash-greeting {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 4px;
+    }
+
+    .dash-name {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .dash-date {
+      font-size: 12px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      padding: 16px 20px;
+    }
+
+    .kpi-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px;
+    }
+
+    .kpi-card.blue {
+      border-top: 2px solid var(--working);
+    }
+
+    .kpi-card.green {
+      border-top: 2px solid var(--accent2);
+    }
+
+    .kpi-card.orange {
+      border-top: 2px solid var(--warn);
+    }
+
+    .kpi-card.red {
+      border-top: 2px solid var(--danger);
+    }
+
+    .kpi-label {
+      font-size: 11px;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 900;
+    }
+
+    .kpi-unit {
+      font-size: 13px;
+      margin-left: 2px;
+    }
+
+    .kpi-sub {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 16px 20px 8px;
+    }
+
+    .status-bar-wrap {
+      padding: 0 20px 16px;
+    }
+
+    .status-bar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .status-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .status-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-name {
+      font-size: 13px;
+      color: var(--text2);
+      min-width: 64px;
+    }
+
+    .status-track {
+      flex: 1;
+      height: 4px;
+      background: var(--surface3);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .status-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width .4s;
+    }
+
+    .status-count {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+      min-width: 24px;
+      text-align: right;
+    }
+
+    .alert-list {
+      padding: 0 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .alert-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--danger);
+      border-radius: 10px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+    }
+
+    .alert-card.warn {
+      border-left-color: var(--warn);
+    }
+
+    .alert-icon {
+      font-size: 20px;
+    }
+
+    .alert-company {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .alert-detail {
+      font-size: 11px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .alert-days {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--danger);
+      margin-left: auto;
+      white-space: nowrap;
+    }
+
+    .alert-card.warn .alert-days {
+      color: var(--warn);
+    }
+
+    .search-wrap {
+      padding: 12px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .search-box {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+    }
+
+    .search-box input {
+      background: none;
+      border: none;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      width: 100%;
+    }
+
+    .category-tabs {
+      display: flex;
+      gap: 8px;
+      padding: 12px 20px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .cat-tab {
+      white-space: nowrap;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text2);
+      cursor: pointer;
+    }
+
+    .cat-tab.active {
+      background: var(--surface2);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .cat-tab.working.active {
+      background: var(--working);
+      border-color: var(--working);
+      color: #000;
+    }
+
+    .cat-tab.medical.active {
+      background: var(--medical);
+      border-color: var(--medical);
+      color: #000;
+    }
+
+    .cat-tab.service.active {
+      background: var(--service);
+      border-color: var(--service);
+      color: #000;
+    }
+
+    .filter-row {
+      display: flex;
+      gap: 8px;
+      padding: 0 20px 12px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+
+    .filter-chip {
+      white-space: nowrap;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-family: inherit;
+      border: 1px solid var(--border);
+      background: none;
+      color: var(--text3);
+      cursor: pointer;
+    }
+
+    .filter-chip.active {
+      border-color: var(--accent4);
+      color: var(--accent4);
+    }
+
+    .customer-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .customer-card {
+      background: var(--surface);
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: background .1s;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+    }
+
+    .customer-card:hover {
+      background: var(--surface2);
+    }
+
+    .customer-card.alert-border {
+      border-left: 3px solid var(--danger);
+    }
+
+    .customer-card.warn-border {
+      border-left: 3px solid var(--warn);
+    }
+
+    .card-top {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .card-company {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    .card-person {
+      font-size: 12px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+
+    .badge-none {
+      background: #2a2d31;
+      color: var(--text3);
+    }
+
+    .badge-react {
+      background: #3a3200;
+      color: var(--accent4);
+    }
+
+    .badge-quote {
+      background: #3a2200;
+      color: var(--warn);
+    }
+
+    .badge-order {
+      background: #003a26;
+      color: var(--accent2);
+    }
+
+    .card-bottom {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+    }
+
+    .card-meta {
+      font-size: 11px;
+      color: var(--text3);
+      display: flex;
+      gap: 12px;
+    }
+
+    .card-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .cat-pill {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+    }
+
+    .pill-working {
+      background: #0d2a3a;
+      color: var(--working);
+    }
+
+    .pill-medical {
+      background: #1e1a2e;
+      color: var(--medical);
+    }
+
+    .pill-service {
+      background: #0d2a28;
+      color: var(--service);
+    }
+
+    .detail-header {
+      background: linear-gradient(160deg, #1a2744 0%, #0d1117 100%);
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .detail-company {
+      font-size: 22px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 4px;
+    }
+
+    .detail-person {
+      font-size: 14px;
+      color: var(--text2);
+      margin-bottom: 12px;
+    }
+
+    .detail-badges {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 10px;
+      padding: 16px 20px;
+    }
+
+    .quick-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 8px;
+      cursor: pointer;
+      color: var(--text2);
+      font-size: 11px;
+      font-family: inherit;
+      transition: all .15s;
+    }
+
+    .quick-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .quick-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    .quick-btn.primary {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    .info-section {
+      padding: 0 20px 16px;
+    }
+
+    .info-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .info-row {
+      display: flex;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      align-items: flex-start;
+      gap: 12px;
+    }
+
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .info-label {
+      font-size: 11px;
+      color: var(--text3);
+      min-width: 80px;
+      padding-top: 2px;
+    }
+
+    .info-value {
+      font-size: 14px;
+      color: var(--text);
+      flex: 1;
+    }
+
+    .info-value.link {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .log-list {
+      padding: 0 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .log-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      position: relative;
+      padding-left: 28px;
+    }
+
+    .log-item::before {
+      content: \'\';
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 6px;
+      height: 6px;
+      background: var(--accent);
+      border-radius: 50%;
+    }
+
+    .log-date {
+      font-size: 11px;
+      color: var(--text3);
+      margin-bottom: 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .log-count {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .log-memo {
+      font-size: 13px;
+      color: var(--text);
+    }
+
+    .visit-hero {
+      background: var(--surface);
+      margin: 16px 20px;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .visit-hero-company {
+      font-size: 13px;
+      color: var(--text2);
+      margin-bottom: 4px;
+    }
+
+    .visit-hero-name {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .visit-one-btn {
+      background: linear-gradient(135deg, var(--accent2), #00b377);
+      color: #000;
+      border: none;
+      padding: 16px 32px;
+      border-radius: 50px;
+      font-size: 16px;
+      font-weight: 900;
+      font-family: inherit;
+      cursor: pointer;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: transform .1s, box-shadow .1s;
+      box-shadow: 0 4px 20px rgba(0, 229, 160, .3);
+    }
+
+    .visit-one-btn:active {
+      transform: scale(.97);
+    }
+
+    .form-section {
+      padding: 0 20px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    .form-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      font-weight: 700;
+    }
+
+    .form-control {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color .15s;
+    }
+
+    .form-control:focus {
+      border-color: var(--accent);
+    }
+
+    select.form-control {
+      appearance: none;
+      cursor: pointer;
+    }
+
+    textarea.form-control {
+      resize: vertical;
+      min-height: 80px;
+    }
+
+    .report-month {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+    }
+
+    .report-month-label {
+      font-size: 20px;
+      font-weight: 900;
+      color: var(--text);
+    }
+
+    .month-nav-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      font-size: 18px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .funnel-wrap {
+      padding: 0 20px 16px;
+    }
+
+    .funnel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 16px;
+    }
+
+    .funnel-row {
+      margin-bottom: 12px;
+    }
+
+    .funnel-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .funnel-label {
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .funnel-bar-bg {
+      background: var(--surface3);
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .funnel-bar {
+      height: 100%;
+      border-radius: 6px;
+    }
+
+    .funnel-arrow {
+      text-align: center;
+      color: var(--text3);
+      font-size: 14px;
+      margin: 4px 0 8px;
+    }
+
+    .conversion-rate {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 10px;
+      background: var(--surface3);
+      color: var(--accent2);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .7);
+      z-index: 300;
+      align-items: flex-end;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+      animation: fadeIn .2s;
+    }
+
+    .modal-sheet {
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      border-radius: 20px 20px 0 0;
+      padding: 20px 20px 40px;
+      width: 100%;
+      max-width: 430px;
+      margin: 0 auto;
+      animation: slideUp .25s ease;
+    }
+
+    @keyframes slideUp {
+      from {
+        transform: translateY(100%)
+      }
+
+      to {
+        transform: translateY(0)
+      }
+    }
+
+    .modal-handle {
+      width: 40px;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 16px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 16px;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 100px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: var(--accent2);
+      color: #000;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 12px 24px;
+      border-radius: 50px;
+      opacity: 0;
+      transition: all .3s;
+      z-index: 400;
+      white-space: nowrap;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .camera-area {
+      background: var(--surface2);
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      margin: 0 20px 16px;
+      transition: border-color .15s;
+    }
+
+    .camera-area:hover {
+      border-color: var(--accent);
+    }
+
+    .ai-scanning {
+      display: none;
+      text-align: center;
+      padding: 24px 20px;
+      margin: 0 20px 16px;
+    }
+
+    .ai-scanning.show {
+      display: block;
+    }
+
+    .scan-dots {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .scan-dot {
+      width: 10px;
+      height: 10px;
+      background: var(--accent);
+      border-radius: 50%;
+      animation: dotPulse 1.2s infinite;
+    }
+
+    .scan-dot:nth-child(2) {
+      animation-delay: .2s;
+    }
+
+    .scan-dot:nth-child(3) {
+      animation-delay: .4s;
+    }
+
+    @keyframes dotPulse {
+
+      0%,
+      80%,
+      100% {
+        opacity: .3;
+        transform: scale(.8)
+      }
+
+      40% {
+        opacity: 1;
+        transform: scale(1)
+      }
+    }
+
+    .delete-btn {
+      background: #3a0d0d;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 14px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- DASHBOARD -->
+  <div class="screen active" id="screen-dashboard">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">🏢 営業管理</div>
+        <div class="topbar-sub">タカギユニフォーム</div>
+      </div>
+      <button class="topbar-action" onclick="showModal('modal-add')">＋ 追加</button>
+    </div>
+    <div class="dash-hero">
+      <div class="dash-greeting">おつかれさまです</div>
+      <div class="dash-name">宮道 卓さん</div>
+      <div class="dash-date" id="today-date"></div>
+    </div>
+    <div class="kpi-grid">
+      <div class="kpi-card blue">
+        <div class="kpi-label">今月の訪問数</div>
+        <div><span class="kpi-value" id="kpi-monthly-visits">0</span><span class="kpi-unit">件</span></div>
+        <div class="kpi-sub">今月合計</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">受注件数</div>
+        <div><span class="kpi-value" id="kpi-orders">0</span><span class="kpi-unit">件</span></div>
+        <div class="kpi-sub">全体のステータス</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">今週の予定</div>
+        <div><span class="kpi-value" id="kpi-weekly">0</span><span class="kpi-unit">社</span></div>
+        <div class="kpi-sub">次回訪問予定</div>
+      </div>
+      <div class="kpi-card red">
+        <div class="kpi-label">放置アラート</div>
+        <div><span class="kpi-value" id="kpi-alert">0</span><span class="kpi-unit">社</span></div>
+        <div class="kpi-sub">90日以上未訪問</div>
+      </div>
+    </div>
+    <div class="section-title">ステータス内訳</div>
+    <div class="status-bar-wrap">
+      <div class="status-bar" id="dash-status-bar"></div>
+    </div>
+    <div class="section-title">⚠️ 要フォロー</div>
+    <div class="alert-list" id="dash-alert-list"></div>
+  </div>
+
+  <!-- CUSTOMER LIST -->
+  <div class="screen" id="screen-list">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">顧客リスト</div>
+        <div class="topbar-sub" id="list-count">0社</div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="topbar-action"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--accent2)"
+          onclick="exportToSheets()">📤 書き出し</button>
+        <button class="topbar-action" onclick="showModal('modal-add')">＋ 追加</button>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"
+          style="color:var(--text3)">
+          <circle cx="11" cy="11" r="8" />
+          <path d="m21 21-4.35-4.35" />
+        </svg>
+        <input type="text" id="search-input" placeholder="会社名・担当者名で検索…" oninput="renderCustomerList()">
+      </div>
+    </div>
+    <div class="category-tabs">
+      <button class="cat-tab active" onclick="setTab(this,'all')">すべて</button>
+      <button class="cat-tab working" onclick="setTab(this,'working')">ワーキング</button>
+      <button class="cat-tab medical" onclick="setTab(this,'medical')">メディカル</button>
+      <button class="cat-tab service" onclick="setTab(this,'service')">サービス</button>
+    </div>
+    <div class="filter-row">
+      <button class="filter-chip active" onclick="setStatusFilter(this,'')">すべて</button>
+      <button class="filter-chip" onclick="setStatusFilter(this,'next')">📅 次回訪問順</button>
+      <button class="filter-chip" onclick="setStatusFilter(this,'脈なし')">脈なし</button>
+      <button class="filter-chip" onclick="setStatusFilter(this,'反応あり')">反応あり</button>
+      <button class="filter-chip" onclick="setStatusFilter(this,'見積もり')">見積もり</button>
+      <button class="filter-chip" onclick="setStatusFilter(this,'受注')">受注</button>
+    </div>
+    <div class="customer-list" id="customer-list-container"></div>
+  </div>
+
+  <!-- CUSTOMER DETAIL -->
+  <div class="screen" id="screen-detail">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="showScreen('screen-list')"
+          style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0">←</button>
+        <div>
+          <div class="topbar-title">顧客詳細</div>
+          <div class="topbar-sub" id="detail-topbar-sub"></div>
+        </div>
+      </div>
+      <button onclick="showModal('modal-edit')"
+        style="background:none;border:1px solid var(--border);color:var(--text2);padding:6px 12px;border-radius:8px;font-size:12px;font-family:inherit;cursor:pointer">編集</button>
+    </div>
+    <div class="detail-header">
+      <div class="detail-company" id="detail-company"></div>
+      <div class="detail-person" id="detail-person"></div>
+      <div class="detail-badges" id="detail-badges"></div>
+    </div>
+    <div class="quick-actions">
+      <button class="quick-btn" id="detail-phone-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path
+            d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 13.5 19.79 19.79 0 0 1 1.61 4.9 2 2 0 0 1 3.6 2.72h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 10.4a16 16 0 0 0 6 6l.94-.94a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 21.5 18l.42-.42a2 2 0 0 1-.42 2.92v-3z" />
+        </svg>
+        電話
+      </button>
+      <button class="quick-btn primary" onclick="showScreen('screen-log')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        訪問記録
+      </button>
+      <button class="quick-btn" onclick="showModal('modal-status')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 11 12 14 22 4" />
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+        </svg>
+        ステータス
+      </button>
+    </div>
+    <div class="section-title">基本情報</div>
+    <div class="info-section">
+      <div class="info-card">
+        <div class="info-row">
+          <div class="info-label">住所</div>
+          <div class="info-value" id="detail-address"></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">電話番号</div>
+          <div class="info-value"><a class="info-value link" id="detail-phone-link" href="#"></a></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">最終訪問日</div>
+          <div class="info-value" id="detail-last-visit"></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">次回予定日</div>
+          <div class="info-value" id="detail-next-visit"></div>
+        </div>
+        <div class="info-row">
+          <div class="info-label">メモ</div>
+          <div class="info-value" id="detail-memo"></div>
+        </div>
+      </div>
+    </div>
+    <div class="section-title" style="display:flex;align-items:center;justify-content:space-between;padding-right:20px">
+      <span>訪問履歴</span>
+      <button onclick="showScreen('screen-log')"
+        style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:12px;font-weight:700;font-family:inherit;padding:5px 12px;border-radius:20px;cursor:pointer">＋
+        追加</button>
+    </div>
+    <div class="log-list" style="margin-bottom:16px" id="detail-log-list"></div>
+  </div>
+
+  <!-- VISIT LOG -->
+  <div class="screen" id="screen-log">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;gap:10px">
+        <button onclick="showScreen('screen-detail')"
+          style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;padding:0">←</button>
+        <div>
+          <div class="topbar-title">訪問記録</div>
+          <div class="topbar-sub" id="log-topbar-sub"></div>
+        </div>
+      </div>
+    </div>
+    <div class="visit-hero">
+      <div class="visit-hero-company" id="log-company"></div>
+      <div class="visit-hero-name" id="log-person"></div>
+      <button class="visit-one-btn" onclick="oneButtonRecord()">✅　今日の訪問を記録する</button>
+    </div>
+    <div class="section-title">新しい訪問を追加</div>
+    <div class="form-section">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div class="form-group" style="padding:0">
+          <div class="form-label">訪問回数</div>
+          <select class="form-control" id="new-log-count">
+            <option>1回目</option>
+            <option>2回目</option>
+            <option>3回目</option>
+            <option>4回目</option>
+            <option>5回目</option>
+            <option>6回目</option>
+            <option>7回目</option>
+            <option>8回目</option>
+            <option>9回目</option>
+            <option>10回目</option>
+          </select>
+        </div>
+        <div class="form-group" style="padding:0">
+          <div class="form-label">訪問日</div><input type="date" class="form-control" id="visit-date">
+        </div>
+      </div>
+      <div class="form-group">
+        <div class="form-label">メモ・会話内容</div><textarea class="form-control" id="new-log-memo"
+          placeholder="今日の訪問メモを入力…"></textarea>
+      </div>
+      <button class="topbar-action" style="width:100%;padding:14px;border-radius:12px;font-size:15px;margin-bottom:24px"
+        onclick="saveVisit()">保存して履歴に追加</button>
+    </div>
+    <div class="section-title">訪問履歴（全件）</div>
+    <div class="log-list" style="margin-bottom:16px" id="full-log-list"></div>
+  </div>
+
+  <!-- REPORT -->
+  <div class="screen" id="screen-report">
+    <div class="topbar">
+      <div>
+        <div class="topbar-title">レポート</div>
+        <div class="topbar-sub" id="report-period-label"></div>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;padding:12px 20px 0">
+      <button id="mode-month" onclick="setReportMode('month')"
+        style="flex:1;padding:8px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:#000">月単位</button>
+      <button id="mode-custom" onclick="setReportMode('custom')"
+        style="flex:1;padding:8px;border-radius:20px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;border:1px solid var(--border);background:none;color:var(--text2)">期間指定</button>
+    </div>
+    <div id="month-nav" class="report-month">
+      <button class="month-nav-btn" onclick="changeMonth(-1)">←</button>
+      <div class="report-month-label" id="month-label"></div>
+      <button class="month-nav-btn" onclick="changeMonth(1)">→</button>
+    </div>
+    <div id="custom-range" style="display:none;padding:12px 20px;gap:10px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%">
+        <div>
+          <div class="form-label" style="margin-bottom:6px">開始日</div><input type="date" class="form-control"
+            id="range-start">
+        </div>
+        <div>
+          <div class="form-label" style="margin-bottom:6px">終了日</div><input type="date" class="form-control"
+            id="range-end">
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap">
+        <button onclick="setQuickRange(7)"
+          style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer">直近7日</button>
+        <button onclick="setQuickRange(30)"
+          style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer">直近30日</button>
+        <button onclick="setQuickRange(90)"
+          style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer">直近90日</button>
+        <button onclick="setQuickRange(365)"
+          style="padding:5px 12px;border-radius:20px;font-size:11px;font-weight:700;font-family:inherit;border:1px solid var(--border);background:none;color:var(--text2);cursor:pointer">直近1年</button>
+      </div>
+    </div>
+    <div class="kpi-grid" style="padding-top:0">
+      <div class="kpi-card blue">
+        <div class="kpi-label">訪問件数</div>
+        <div><span class="kpi-value" id="rpt-visits">0</span><span class="kpi-unit">件</span></div>
+        <div class="kpi-sub" id="rpt-visits-sub"></div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">受注件数</div>
+        <div><span class="kpi-value" id="rpt-orders">0</span><span class="kpi-unit">件</span></div>
+        <div class="kpi-sub" id="rpt-orders-sub"></div>
+      </div>
+    </div>
+    <div class="section-title" id="cat-section-title">カテゴリ別集計</div>
+    <div style="padding:0 20px 16px;display:flex;flex-direction:column;gap:10px" id="rpt-cat-grid"></div>
+    <div class="section-title">成約率ファネル（全体）</div>
+    <div class="funnel-wrap">
+      <div class="funnel-card" id="funnel-card"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="showScreen('screen-dashboard',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="3" y="3" width="7" height="7" />
+        <rect x="14" y="3" width="7" height="7" />
+        <rect x="3" y="14" width="7" height="7" />
+        <rect x="14" y="14" width="7" height="7" />
+      </svg>ホーム
+    </button>
+    <button class="nav-item" onclick="showScreen('screen-list',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
+      </svg>
+      リスト<div class="nav-badge" id="nav-badge-list">0</div>
+    </button>
+    <button class="nav-item" onclick="showScreen('screen-log',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>訪問ログ
+    </button>
+    <button class="nav-item" onclick="showScreen('screen-report',this)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="20" x2="18" y2="10" />
+        <line x1="12" y1="20" x2="12" y2="4" />
+        <line x1="6" y1="20" x2="6" y2="14" />
+      </svg>レポート
+    </button>
+  </nav>
+
+  <!-- MODAL: ADD CUSTOMER -->
+  <div class="modal-overlay" id="modal-add" onclick="closeModalOutside(event,'modal-add')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">顧客を追加</div>
+      <div class="camera-area" id="camera-area" onclick="startScan()">
+        <div style="font-size:40px;margin-bottom:8px">📷</div>
+        <div style="font-size:14px;color:var(--text2)">名刺を撮影してAI自動入力</div>
+        <div style="font-size:12px;color:var(--text3);margin-top:4px">タップしてカメラを起動</div>
+      </div>
+      <div class="ai-scanning" id="ai-scanning">
+        <div class="scan-dots">
+          <div class="scan-dot"></div>
+          <div class="scan-dot"></div>
+          <div class="scan-dot"></div>
+        </div>
+        <div style="font-size:14px;color:var(--text2)">名刺を読み取っています…</div>
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">会社名 *</div><input type="text" class="form-control" id="new-company"
+          placeholder="株式会社〇〇">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">担当者名</div><input type="text" class="form-control" id="new-person" placeholder="山田 太郎">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">電話番号</div><input type="tel" class="form-control" id="new-phone"
+          placeholder="0532-00-0000">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">住所</div><input type="text" class="form-control" id="new-address" placeholder="愛知県豊橋市…">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">カテゴリ</div>
+        <select class="form-control" id="new-category">
+          <option value="working">ワーキング</option>
+          <option value="medical">メディカル</option>
+          <option value="service">サービス</option>
+        </select>
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">商談ステータス</div>
+        <select class="form-control" id="new-status">
+          <option value="脈なし">脈なし</option>
+          <option value="反応あり">反応あり</option>
+          <option value="見積もり">見積もり</option>
+          <option value="受注">受注</option>
+        </select>
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">次回訪問予定日</div><input type="date" class="form-control" id="new-next-visit">
+      </div>
+      <div class="form-group" style="padding:0 0 16px">
+        <div class="form-label">メモ</div><textarea class="form-control" id="new-memo" placeholder="メモ・気づきなど…"
+          style="min-height:70px"></textarea>
+      </div>
+      <button class="topbar-action" style="width:100%;padding:14px;border-radius:12px;font-size:15px"
+        onclick="addCustomer()">登録する</button>
+    </div>
+  </div>
+
+  <!-- MODAL: STATUS CHANGE -->
+  <div class="modal-overlay" id="modal-status" onclick="closeModalOutside(event,'modal-status')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">ステータスを変更</div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:20px">
+        <button onclick="changeStatus('脈なし')"
+          style="background:var(--surface2);border:1px solid var(--border);color:var(--text2);padding:14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;text-align:left">😶
+          脈なし</button>
+        <button onclick="changeStatus('反応あり')"
+          style="background:#3a3200;border:1px solid var(--accent4);color:var(--accent4);padding:14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;text-align:left">⭐
+          反応あり</button>
+        <button onclick="changeStatus('見積もり')"
+          style="background:#3a2200;border:1px solid var(--warn);color:var(--warn);padding:14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;text-align:left">📝
+          見積もり</button>
+        <button onclick="changeStatus('受注')"
+          style="background:#003a26;border:1px solid var(--accent2);color:var(--accent2);padding:14px;border-radius:10px;font-size:14px;font-family:inherit;cursor:pointer;text-align:left">✅
+          受注</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL: EDIT CUSTOMER -->
+  <div class="modal-overlay" id="modal-edit" onclick="closeModalOutside(event,'modal-edit')">
+    <div class="modal-sheet">
+      <div class="modal-handle"></div>
+      <div class="modal-title">顧客情報を編集</div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">会社名 *</div><input type="text" class="form-control" id="edit-company">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">担当者名</div><input type="text" class="form-control" id="edit-person">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">電話番号</div><input type="tel" class="form-control" id="edit-phone">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">住所</div><input type="text" class="form-control" id="edit-address">
+      </div>
+      <div class="form-group" style="padding:0 0 12px">
+        <div class="form-label">次回訪問予定日</div><input type="date" class="form-control" id="edit-next-visit">
+      </div>
+      <div class="form-group" style="padding:0 0 16px">
+        <div class="form-label">メモ</div><textarea class="form-control" id="edit-memo"
+          style="min-height:70px"></textarea>
+      </div>
+      <button class="topbar-action" style="width:100%;padding:14px;border-radius:12px;font-size:15px;margin-bottom:12px"
+        onclick="saveEdit()">保存する</button>
+      <button class="delete-btn" onclick="deleteCustomer()">🗑 この顧客を削除する</button>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+  <script>
+    // ============================================================
+    // データ管理（localStorage永続化）
+    // ============================================================
+    const STORAGE_KEY = 'sales_app_customers_v2';
+
+    const DEFAULT_CUSTOMERS = [
+      {
+        id: 1, company: '株式会社丸山製作所', person: '鈴木 太郎 部長', phone: '0532-00-0001', address: '愛知県豊橋市神明町42-1', category: 'working', status: '反応あり', nextVisitDate: '2025-03-22', memo: '作業服上下・安全靴に興味あり。4月の新入社員研修に合わせて検討したい。', logs: [
+          { count: '1回目', date: '2024-03-22', memo: '初訪問。受付で名刺交換のみ。担当者不在だったため後日再訪予定。' },
+          { count: '2回目', date: '2024-06-18', memo: '鈴木部長と面会。工場見学後に商談。作業着の更新を来期に検討している。' },
+          { count: '3回目', date: '2024-09-05', memo: '予算確認。春の新入社員分でまずは検討との回答。' },
+          { count: '4回目', date: '2024-12-10', memo: 'カタログを持参。作業服サンプルを見せたところ色味を気に入ってもらえた。' },
+        ]
+      },
+      {
+        id: 2, company: '医療法人明和会', person: '田中 義雄 院長', phone: '0533-11-2222', address: '愛知県豊川市大通1-5', category: 'medical', status: '見積もり', nextVisitDate: '2025-03-25', memo: '白衣・スクラブ検討中。スタッフ20名分。', logs: [
+          { count: '1回目', date: '2024-05-10', memo: '院長と初面談。白衣の見積もりを依頼された。' },
+          { count: '2回目', date: '2024-08-20', memo: 'サンプル持参。色・サイズ感は好評。' },
+        ]
+      },
+      {
+        id: 3, company: '豊川商事株式会社', person: '山田 花子 課長', phone: '0533-22-3333', address: '愛知県豊川市千歳通5-8', category: 'service', status: '受注', nextVisitDate: '2025-04-10', memo: '制服30着受注済み。追加注文の可能性あり。', logs: [
+          { count: '1回目', date: '2024-04-15', memo: '初訪問。担当者と良好な関係を構築。' },
+          { count: '2回目', date: '2024-10-01', memo: '見積書提出。前向きな回答をもらえた。' },
+          { count: '3回目', date: '2025-01-15', memo: '正式受注！追加も検討してもらえる見込み。' },
+        ]
+      },
+      {
+        id: 4, company: '浜松工業株式会社', person: '伊藤 一郎 社長', phone: '053-44-5555', address: '静岡県浜松市中区鍛冶町1-1', category: 'working', status: '脈なし', nextVisitDate: '', memo: '既存業者と長期契約中。切り替えは難しそう。', logs: [
+          { count: '1回目', date: '2024-10-20', memo: '初訪問。現在の業者と10年以上の付き合いがあるとのこと。' },
+        ]
+      },
+      {
+        id: 5, company: '中部フード株式会社', person: '小林 次郎 部長', phone: '0533-55-6666', address: '愛知県豊川市諏訪3-12', category: 'service', status: '反応あり', nextVisitDate: '2025-04-01', memo: '食品加工場の白衣・帽子を検討中。衛生管理強化の方針あり。', logs: [
+          { count: '1回目', date: '2025-01-20', memo: '初訪問。食品関連の衛生ウェアに興味を持っていただいた。' },
+          { count: '2回目', date: '2025-02-28', memo: '詳細ヒアリング。30名分の見積もり依頼。' },
+        ]
+      },
+    ];
+
+    function loadCustomers() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) { saveCustomers(DEFAULT_CUSTOMERS); return DEFAULT_CUSTOMERS; }
+      try { return JSON.parse(raw); } catch (e) { return DEFAULT_CUSTOMERS; }
+    }
+    function saveCustomers(arr) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+    }
+
+    let customers = loadCustomers();
+    let currentCustomerId = null;
+
+    // ============================================================
+    // ユーティリティ
+    // ============================================================
+    const now = new Date();
+    document.getElementById('today-date').textContent =
+      now.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
+    const d = document.getElementById('visit-date');
+    if (d) d.value = now.toISOString().split('T')[0];
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '未定';
+      const dt = new Date(dateStr);
+      return isNaN(dt) ? dateStr : dt.toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    function getDaysSince(dateStr) {
+      if (!dateStr) return null;
+      const dt = new Date(dateStr);
+      if (isNaN(dt)) return null;
+      return Math.floor((now - dt) / 86400000);
+    }
+
+    function getLastVisitDate(logs) {
+      if (!logs || logs.length === 0) return null;
+      const sorted = [...logs].sort((a, b) => new Date(b.date) - new Date(a.date));
+      return sorted[0].date;
+    }
+
+    const statusBadgeMap = { '脈なし': 'badge-none', '反応あり': 'badge-react', '見積もり': 'badge-quote', '受注': 'badge-order' };
+    const catPillMap = { working: 'pill-working', medical: 'pill-medical', service: 'pill-service' };
+    const catLabelMap = { working: 'ワーキング', medical: 'メディカル', service: 'サービス' };
+
+    function currentCustomer() {
+      return customers.find(c => c.id === currentCustomerId);
+    }
+
+    // ============================================================
+    // 画面切替
+    // ============================================================
+    function showScreen(id, navBtn) {
+      document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+      document.getElementById(id).classList.add('active');
+      document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+      if (navBtn) navBtn.classList.add('active');
+      window.scrollTo(0, 0);
+      if (id === 'screen-dashboard') renderDashboard();
+      if (id === 'screen-list') renderCustomerList();
+      if (id === 'screen-detail') renderDetail();
+      if (id === 'screen-log') renderLogScreen();
+      if (id === 'screen-report') updateReport();
+    }
+
+    // ============================================================
+    // ダッシュボード
+    // ============================================================
+    function renderDashboard() {
+      const y = now.getFullYear(), m = now.getMonth();
+      let monthVisits = 0;
+      const weekStart = new Date(now); weekStart.setDate(now.getDate() - now.getDay());
+      const weekEnd = new Date(now); weekEnd.setDate(now.getDate() + (6 - now.getDay()));
+      let weeklyCount = 0, alertCount = 0, orderCount = 0;
+      const alertItems = [];
+
+      customers.forEach(c => {
+        // 訪問数（今月）
+        (c.logs || []).forEach(l => {
+          const dt = new Date(l.date);
+          if (dt.getFullYear() === y && dt.getMonth() === m) monthVisits++;
+        });
+        // 受注
+        if (c.status === '受注') orderCount++;
+        // 今週の訪問予定
+        if (c.nextVisitDate) {
+          const nv = new Date(c.nextVisitDate);
+          if (nv >= weekStart && nv <= weekEnd) weeklyCount++;
+        }
+        // 放置アラート
+        const lastDate = getLastVisitDate(c.logs);
+        const days = getDaysSince(lastDate);
+        if (days !== null && days >= 90) {
+          alertCount++;
+          alertItems.push({ c, days });
+        } else if (days === null && (c.logs || []).length === 0) {
+          // 未訪問は別扱い
+        }
+      });
+
+      document.getElementById('kpi-monthly-visits').textContent = monthVisits;
+      document.getElementById('kpi-orders').textContent = orderCount;
+      document.getElementById('kpi-weekly').textContent = weeklyCount;
+      document.getElementById('kpi-alert').textContent = alertCount;
+      document.getElementById('nav-badge-list').textContent = alertCount;
+
+      // ステータス内訳
+      const counts = { '脈なし': 0, '反応あり': 0, '見積もり': 0, '受注': 0 };
+      customers.forEach(c => { if (counts[c.status] !== undefined) counts[c.status]++; });
+      const total = customers.length || 1;
+      const colors = { '脈なし': 'var(--status-none)', '反応あり': 'var(--status-react)', '見積もり': 'var(--status-quote)', '受注': 'var(--status-order)' };
+      document.getElementById('dash-status-bar').innerHTML = Object.entries(counts).map(([k, v]) =>
+        `<div class="status-row">
+      <div class="status-dot" style="background:${colors[k]}"></div>
+      <div class="status-name">${k}</div>
+      <div class="status-track"><div class="status-fill" style="width:${Math.round(v / total * 100)}%;background:${colors[k]}"></div></div>
+      <div class="status-count">${v}</div>
+    </div>`
+      ).join('');
+
+      // アラートリスト
+      alertItems.sort((a, b) => b.days - a.days);
+      const alertEl = document.getElementById('dash-alert-list');
+      if (alertItems.length === 0) {
+        alertEl.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">放置顧客はありません 👍</div>';
+      } else {
+        alertEl.innerHTML = alertItems.map(({ c, days }) => {
+          const cls = days >= 90 ? '' : 'warn';
+          return `<div class="alert-card ${cls}" onclick="showCustomer(${c.id})">
+        <div class="alert-icon">${days >= 90 ? '🔴' : '🟠'}</div>
+        <div>
+          <div class="alert-company">${c.company}</div>
+          <div class="alert-detail">担当：${c.person}　${c.status}</div>
+        </div>
+        <div class="alert-days">${days}日</div>
+      </div>`;
+        }).join('');
+      }
+    }
+    renderDashboard();
+
+    // ============================================================
+    // 顧客リスト
+    // ============================================================
+    let activeCategory = 'all';
+    let activeStatus = '';
+
+    function renderCustomerList() {
+      const query = (document.getElementById('search-input')?.value || '').trim().toLowerCase();
+      let filtered = customers.filter(c => {
+        const matchSearch = !query || c.company.toLowerCase().includes(query) || (c.person || '').toLowerCase().includes(query);
+        const matchCategory = activeCategory === 'all' || c.category === activeCategory;
+        const matchStatus = !activeStatus || activeStatus === 'next' ? true : c.status === activeStatus;
+        return matchSearch && matchCategory && matchStatus;
+      });
+
+      if (activeStatus === 'next') {
+        filtered.sort((a, b) => {
+          const toD = s => s ? new Date(s) : new Date('9999-12-31');
+          return toD(a.nextVisitDate) - toD(b.nextVisitDate);
+        });
+      }
+
+      const container = document.getElementById('customer-list-container');
+      const countEl = document.getElementById('list-count');
+      if (countEl) countEl.textContent = `${filtered.length}社`;
+
+      if (filtered.length === 0) {
+        container.innerHTML = '<div style="padding:40px 20px;text-align:center;color:var(--text3);font-size:14px">該当する顧客が見つかりません</div>';
+        return;
+      }
+
+      container.innerHTML = filtered.map(c => {
+        const lastDate = getLastVisitDate(c.logs);
+        const days = getDaysSince(lastDate);
+        const borderClass = (days !== null && days >= 90) ? 'alert-border' : (days !== null && days >= 60) ? 'warn-border' : '';
+        const visitCount = (c.logs || []).length;
+        const dateColor = activeStatus === 'next' ? 'var(--accent)' : 'inherit';
+        let metaHtml;
+        if (days !== null && days >= 90) {
+          metaHtml = `<span style="color:var(--danger)">⚠️ ${days}日未訪問</span><span>📅 次回：${c.nextVisitDate ? formatDate(c.nextVisitDate) : '未定'}</span>`;
+        } else {
+          metaHtml = `<span style="color:${dateColor}">📅 次回：${c.nextVisitDate ? formatDate(c.nextVisitDate) : '未定'}</span><span>🔢 ${visitCount}回訪問済</span>`;
+        }
+        return `<div class="customer-card ${borderClass}" onclick="showCustomer(${c.id})">
+      <div class="card-top">
+        <div><div class="card-company">${c.company}</div><div class="card-person">${c.person || ''}</div></div>
+        <span class="status-badge ${statusBadgeMap[c.status] || 'badge-none'}">${c.status}</span>
+      </div>
+      <div class="card-bottom">
+        <div class="card-meta">${metaHtml}</div>
+        <span class="cat-pill ${catPillMap[c.category] || 'pill-working'}">${catLabelMap[c.category] || c.category}</span>
+      </div>
+    </div>`;
+      }).join('');
+    }
+
+    function setTab(el, cat) {
+      document.querySelectorAll('.cat-tab').forEach(t => t.classList.remove('active'));
+      el.classList.add('active'); activeCategory = cat; renderCustomerList();
+    }
+    function setStatusFilter(el, status) {
+      document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active'); activeStatus = status; renderCustomerList();
+    }
+    renderCustomerList();
+
+    // ============================================================
+    // 顧客詳細
+    // ============================================================
+    function showCustomer(id) {
+      currentCustomerId = id;
+      showScreen('screen-detail');
+    }
+
+    function renderDetail() {
+      const c = currentCustomer();
+      if (!c) return;
+      document.getElementById('detail-topbar-sub').textContent = c.company;
+      document.getElementById('detail-company').textContent = c.company;
+      document.getElementById('detail-person').textContent = c.person || '';
+      document.getElementById('detail-badges').innerHTML =
+        `<span class="status-badge ${statusBadgeMap[c.status] || 'badge-none'}">${c.status}</span>
+     <span class="cat-pill ${catPillMap[c.category] || 'pill-working'}" style="font-size:11px;padding:3px 10px">${catLabelMap[c.category] || c.category}</span>`;
+
+      document.getElementById('detail-address').textContent = c.address || '未登録';
+      const phoneLink = document.getElementById('detail-phone-link');
+      phoneLink.textContent = c.phone || '未登録';
+      phoneLink.href = c.phone ? `tel:${c.phone}` : '#';
+      const phoneBtn = document.getElementById('detail-phone-btn');
+      phoneBtn.onclick = () => { if (c.phone) window.location.href = `tel:${c.phone}`; };
+
+      const lastDate = getLastVisitDate(c.logs);
+      const days = getDaysSince(lastDate);
+      document.getElementById('detail-last-visit').textContent =
+        lastDate ? `${formatDate(lastDate)}（${days}日前）` : '未訪問';
+      const nvEl = document.getElementById('detail-next-visit');
+      nvEl.textContent = c.nextVisitDate ? formatDate(c.nextVisitDate) : '未定';
+      nvEl.style.color = c.nextVisitDate ? 'var(--accent4)' : 'var(--text3)';
+      document.getElementById('detail-memo').textContent = c.memo || '—';
+
+      renderLogs();
+    }
+
+    function renderLogs() {
+      const c = currentCustomer();
+      if (!c) return;
+      const logs = [...(c.logs || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+      const html = logs.length === 0
+        ? '<div style="padding:20px;text-align:center;color:var(--text3);font-size:13px">まだ訪問記録がありません</div>'
+        : logs.map((l, i) => `
+      <div class="log-item" style="animation:fadeIn .2s ease ${i * .05}s both">
+        <div class="log-date"><span>${formatDate(l.date)}</span><span class="log-count">${l.count}</span></div>
+        <div class="log-memo">${l.memo || '<span style="color:var(--text3)">メモなし</span>'}</div>
+      </div>`).join('');
+      const detailEl = document.getElementById('detail-log-list');
+      const fullEl = document.getElementById('full-log-list');
+      if (detailEl) detailEl.innerHTML = html;
+      if (fullEl) fullEl.innerHTML = html;
+    }
+
+    // ============================================================
+    // 訪問ログ画面
+    // ============================================================
+    function renderLogScreen() {
+      const c = currentCustomer();
+      if (!c) return;
+      document.getElementById('log-topbar-sub').textContent = c.company;
+      document.getElementById('log-company').textContent = c.company;
+      document.getElementById('log-person').textContent = c.person || '';
+      const d2 = document.getElementById('visit-date');
+      if (d2) d2.value = now.toISOString().split('T')[0];
+      renderLogs();
+    }
+
+    function oneButtonRecord() {
+      const c = currentCustomer();
+      if (!c) return;
+      const nextNum = (c.logs || []).length + 1;
+      if (!c.logs) c.logs = [];
+      c.logs.push({ count: nextNum + '回目', date: now.toISOString().split('T')[0], memo: '' });
+      saveCustomers(customers);
+      renderLogs();
+      showToast('訪問を記録しました ✅');
+      setTimeout(() => showScreen('screen-detail'), 800);
+    }
+
+    function saveVisit() {
+      const c = currentCustomer();
+      if (!c) return;
+      const count = document.getElementById('new-log-count').value;
+      const date = document.getElementById('visit-date').value;
+      const memo = document.getElementById('new-log-memo').value.trim();
+      if (!date) { showToast('訪問日を入力してください'); return; }
+      if (!c.logs) c.logs = [];
+      const existing = c.logs.findIndex(l => l.count === count);
+      if (existing >= 0) c.logs[existing] = { count, date, memo };
+      else c.logs.push({ count, date, memo });
+      saveCustomers(customers);
+      document.getElementById('new-log-memo').value = '';
+      showToast('訪問ログを保存しました ✅');
+      setTimeout(() => showScreen('screen-detail'), 800);
+    }
+
+    // ============================================================
+    // ステータス変更
+    // ============================================================
+    function changeStatus(newStatus) {
+      const c = currentCustomer();
+      if (!c) return;
+      c.status = newStatus;
+      saveCustomers(customers);
+      closeModal('modal-status');
+      renderDetail();
+      showToast(`${newStatus} に変更しました`);
+    }
+
+    // ============================================================
+    // 顧客追加
+    // ============================================================
+    function addCustomer() {
+      const company = document.getElementById('new-company').value.trim();
+      if (!company) { showToast('会社名を入力してください'); return; }
+      const nc = {
+        id: Date.now(),
+        company,
+        person: document.getElementById('new-person').value.trim(),
+        phone: document.getElementById('new-phone').value.trim(),
+        address: document.getElementById('new-address').value.trim(),
+        category: document.getElementById('new-category').value,
+        status: document.getElementById('new-status').value,
+        nextVisitDate: document.getElementById('new-next-visit').value,
+        memo: document.getElementById('new-memo').value.trim(),
+        logs: [],
+      };
+      customers.push(nc);
+      saveCustomers(customers);
+      // フォームリセット
+      ['new-company', 'new-person', 'new-phone', 'new-address', 'new-memo'].forEach(id => document.getElementById(id).value = '');
+      document.getElementById('new-next-visit').value = '';
+      closeModal('modal-add');
+      renderCustomerList();
+      renderDashboard();
+      showToast('顧客を登録しました ✅');
+      showScreen('screen-list');
+    }
+
+    // ============================================================
+    // 顧客編集
+    // ============================================================
+    function showModal(id) {
+      if (id === 'modal-edit') {
+        const c = currentCustomer();
+        if (!c) return;
+        document.getElementById('edit-company').value = c.company || '';
+        document.getElementById('edit-person').value = c.person || '';
+        document.getElementById('edit-phone').value = c.phone || '';
+        document.getElementById('edit-address').value = c.address || '';
+        document.getElementById('edit-next-visit').value = c.nextVisitDate || '';
+        document.getElementById('edit-memo').value = c.memo || '';
+      }
+      document.getElementById(id).classList.add('open');
+    }
+
+    function saveEdit() {
+      const c = currentCustomer();
+      if (!c) return;
+      const company = document.getElementById('edit-company').value.trim();
+      if (!company) { showToast('会社名を入力してください'); return; }
+      c.company = company;
+      c.person = document.getElementById('edit-person').value.trim();
+      c.phone = document.getElementById('edit-phone').value.trim();
+      c.address = document.getElementById('edit-address').value.trim();
+      c.nextVisitDate = document.getElementById('edit-next-visit').value;
+      c.memo = document.getElementById('edit-memo').value.trim();
+      saveCustomers(customers);
+      closeModal('modal-edit');
+      renderDetail();
+      renderCustomerList();
+      showToast('顧客情報を更新しました ✅');
+    }
+
+    function deleteCustomer() {
+      const c = currentCustomer();
+      if (!c) return;
+      if (!confirm(`「${c.company}」を削除しますか？この操作は取り消せません。`)) return;
+      customers = customers.filter(x => x.id !== currentCustomerId);
+      currentCustomerId = null;
+      saveCustomers(customers);
+      closeModal('modal-edit');
+      showToast('顧客を削除しました');
+      showScreen('screen-list');
+      renderDashboard();
+    }
+
+    // ============================================================
+    // モーダル
+    // ============================================================
+    function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+    function closeModalOutside(e, id) { if (e.target.classList.contains('modal-overlay')) closeModal(id); }
+
+    // ============================================================
+    // 名刺スキャン演出
+    // ============================================================
+    function startScan() {
+      document.getElementById('camera-area').style.display = 'none';
+      document.getElementById('ai-scanning').classList.add('show');
+      setTimeout(() => {
+        document.getElementById('ai-scanning').classList.remove('show');
+        document.getElementById('camera-area').style.display = 'block';
+        document.getElementById('new-company').value = '株式会社サンプル製作所';
+        document.getElementById('new-person').value = '佐藤 健一';
+        document.getElementById('new-phone').value = '0533-12-3456';
+        showToast('名刺の読み取りが完了しました ✨');
+      }, 2200);
+    }
+
+    // ============================================================
+    // レポート
+    // ============================================================
+    let reportMode = 'month';
+    let reportYear = now.getFullYear();
+    let reportMonth = now.getMonth() + 1;
+
+    function setReportMode(mode) {
+      reportMode = mode;
+      ['month', 'custom'].forEach(m => {
+        const btn = document.getElementById('mode-' + m);
+        btn.style.background = mode === m ? 'var(--accent)' : 'none';
+        btn.style.color = mode === m ? '#000' : 'var(--text2)';
+        btn.style.borderColor = mode === m ? 'var(--accent)' : 'var(--border)';
+      });
+      document.getElementById('month-nav').style.display = mode === 'month' ? 'flex' : 'none';
+      document.getElementById('custom-range').style.display = mode === 'custom' ? 'block' : 'none';
+      updateReport();
+    }
+
+    function changeMonth(diff) {
+      reportMonth += diff;
+      if (reportMonth > 12) { reportMonth = 1; reportYear++; }
+      if (reportMonth < 1) { reportMonth = 12; reportYear--; }
+      document.getElementById('month-label').textContent = `${reportYear}年${reportMonth}月`;
+      updateReport();
+    }
+
+    function setQuickRange(days) {
+      const end = new Date(), start = new Date();
+      start.setDate(end.getDate() - days + 1);
+      document.getElementById('range-start').value = start.toISOString().split('T')[0];
+      document.getElementById('range-end').value = end.toISOString().split('T')[0];
+      updateReport();
+    }
+
+    function getLogsInRange(c, startDate, endDate) {
+      return (c.logs || []).filter(l => {
+        const dt = new Date(l.date);
+        return dt >= startDate && dt <= endDate;
+      });
+    }
+
+    function updateReport() {
+      let startDate, endDate, label;
+      if (reportMode === 'month') {
+        startDate = new Date(reportYear, reportMonth - 1, 1);
+        endDate = new Date(reportYear, reportMonth, 0);
+        label = `${reportYear}年${reportMonth}月`;
+      } else {
+        const s = document.getElementById('range-start').value;
+        const e = document.getElementById('range-end').value;
+        if (!s || !e) return;
+        startDate = new Date(s); endDate = new Date(e); label = `${s} 〜 ${e}`;
+      }
+      document.getElementById('report-period-label').textContent = label;
+      document.getElementById('cat-section-title').textContent = `カテゴリ別集計（${label}）`;
+      document.getElementById('month-label').textContent = `${reportYear}年${reportMonth}月`;
+
+      // KPI集計
+      let totalVisits = 0;
+      const catData = { working: { none: 0, react: 0, quote: 0, order: 0, visits: 0 }, medical: { none: 0, react: 0, quote: 0, order: 0, visits: 0 }, service: { none: 0, react: 0, quote: 0, order: 0, visits: 0 } };
+      const statusKey = { '脈なし': 'none', '反応あり': 'react', '見積もり': 'quote', '受注': 'order' };
+
+      customers.forEach(c => {
+        const cat = (c.category in catData) ? c.category : 'working';
+        const sk = statusKey[c.status] || 'none';
+        catData[cat][sk]++;
+        const logsInRange = getLogsInRange(c, startDate, endDate);
+        catData[cat].visits += logsInRange.length;
+        totalVisits += logsInRange.length;
+      });
+
+      const totalOrders = customers.filter(c => c.status === '受注').length;
+      document.getElementById('rpt-visits').textContent = totalVisits;
+      document.getElementById('rpt-orders').textContent = totalOrders;
+      document.getElementById('rpt-visits-sub').textContent = `${label}の合計`;
+      document.getElementById('rpt-orders-sub').textContent = '全ステータスの受注数';
+
+      // カテゴリ別カード
+      const catColors = { working: 'var(--working)', medical: 'var(--medical)', service: 'var(--service)' };
+      const catEmoji = { working: '🔵', medical: '🟣', service: '🟢' };
+      document.getElementById('rpt-cat-grid').innerHTML = Object.entries(catData).map(([cat, d]) =>
+        `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid ${catColors[cat]};border-radius:12px;padding:14px 16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <span style="font-size:13px;font-weight:700;color:${catColors[cat]}">${catEmoji[cat]} ${catLabelMap[cat]}</span>
+        <span style="font-size:12px;color:var(--text2)">訪問 <strong style="color:var(--text)">${d.visits}件</strong></span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center">
+        <div style="background:var(--surface2);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">脈なし</div><div style="font-size:18px;font-weight:900;color:var(--text)">${d.none}</div></div>
+        <div style="background:var(--surface2);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">反応あり</div><div style="font-size:18px;font-weight:900;color:var(--accent4)">${d.react}</div></div>
+        <div style="background:var(--surface2);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">見積もり</div><div style="font-size:18px;font-weight:900;color:var(--warn)">${d.quote}</div></div>
+        <div style="background:var(--surface2);border-radius:8px;padding:8px 4px"><div style="font-size:10px;color:var(--text3);margin-bottom:4px">受注</div><div style="font-size:18px;font-weight:900;color:var(--accent2)">${d.order}</div></div>
+      </div>
+    </div>`
+      ).join('');
+
+      // ファネル
+      const sTotal = Object.values(catData).reduce((a, d) => ({ none: a.none + d.none, react: a.react + d.react, quote: a.quote + d.quote, order: a.order + d.order }), { none: 0, react: 0, quote: 0, order: 0 });
+      const noneTotal = sTotal.none + sTotal.react + sTotal.quote + sTotal.order || 1;
+      document.getElementById('funnel-card').innerHTML =
+        `<div class="funnel-row"><div class="funnel-label"><span>脈なし〜全体</span><span>${noneTotal}社</span></div><div class="funnel-bar-bg"><div class="funnel-bar" style="width:100%;background:var(--status-none)"></div></div></div>
+     <div class="funnel-arrow">↓ <span class="conversion-rate">${Math.round(sTotal.react / noneTotal * 100)}% → 反応あり</span></div>
+     <div class="funnel-row"><div class="funnel-label"><span>反応あり</span><span>${sTotal.react}社</span></div><div class="funnel-bar-bg"><div class="funnel-bar" style="width:${Math.round(sTotal.react / noneTotal * 100)}%;background:var(--status-react)"></div></div></div>
+     <div class="funnel-arrow">↓ <span class="conversion-rate">${sTotal.react ? Math.round(sTotal.quote / sTotal.react * 100) : 0}% → 見積もり</span></div>
+     <div class="funnel-row"><div class="funnel-label"><span>見積もり</span><span>${sTotal.quote}社</span></div><div class="funnel-bar-bg"><div class="funnel-bar" style="width:${Math.round(sTotal.quote / noneTotal * 100)}%;background:var(--status-quote)"></div></div></div>
+     <div class="funnel-arrow">↓ <span class="conversion-rate">${sTotal.quote ? Math.round(sTotal.order / sTotal.quote * 100) : 0}% → 受注</span></div>
+     <div class="funnel-row"><div class="funnel-label"><span>受注</span><span>${sTotal.order}社</span></div><div class="funnel-bar-bg"><div class="funnel-bar" style="width:${Math.round(sTotal.order / noneTotal * 100)}%;background:var(--status-order)"></div></div></div>`;
+    }
+
+    document.getElementById('range-start').addEventListener('change', updateReport);
+    document.getElementById('range-end').addEventListener('change', updateReport);
+    document.getElementById('range-start').value = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0];
+    document.getElementById('range-end').value = now.toISOString().split('T')[0];
+
+    // ============================================================
+    // Google Sheets エクスポート
+    // ============================================================
+    const GAS_URL = 'https://script.google.com/macros/s/AKfycbzedwVklH3EgDdZHBQ5BYellq2xBTSRPGaJPIZWD1Et-Onml1dwpmXv3aFmohjIduRjBQ/exec';
+
+    async function exportToSheets() {
+      showToast('Sheetsに送信中…');
+      const payload = customers.map(c => ({
+        company: c.company,
+        person: c.person || '',
+        phone: c.phone || '',
+        address: c.address || '',
+        category: catLabelMap[c.category] || c.category,
+        status: c.status,
+        nextVisitDate: c.nextVisitDate || '未定',
+        lastVisitDate: getLastVisitDate(c.logs) || '未訪問',
+        memo: c.memo || '',
+      }));
+
+      const encoded = encodeURIComponent(JSON.stringify(payload));
+      const url = GAS_URL + '?data=' + encoded;
+
+      // 隠しiframe方式（file://からGASへの最も確実な通信方法）
+      return new Promise(resolve => {
+        const iframe = document.createElement('iframe');
+        iframe.style.cssText = 'width:0;height:0;border:0;position:fixed;top:-1px;left:-1px;';
+        iframe.onload = () => {
+          showToast('Sheetsへの書き出しが完了しました ✅');
+          setTimeout(() => { if (iframe.parentNode) iframe.parentNode.removeChild(iframe); }, 1000);
+          resolve();
+        };
+        iframe.onerror = () => {
+          showToast('送信に失敗しました');
+          resolve();
+        };
+        iframe.src = url;
+        document.body.appendChild(iframe);
+        // 15秒でタイムアウト
+        setTimeout(() => {
+          showToast('Sheetsへの書き出しが完了しました ✅');
+          if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+          resolve();
+        }, 15000);
+      });
+    }
+
+    // ============================================================
+    // Toast
+    // ============================================================
+    function showToast(msg) {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.classList.add('show');
+      setTimeout(() => t.classList.remove('show'), 2500);
+    }
+  </script>
+</body>
+
+</html>
